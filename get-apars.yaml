@@ -1,0 +1,24 @@
+---
+- name: Execute curl request to IBM API
+  hosts: localhost
+  gather_facts: no
+  
+  vars:
+    api_key: "{{ concert_api_key }}"
+    instance_id: "{{ concert_instance_id }}"
+    api_url: "https://65879.us-south-8.concert.saas.ibm.com/grader/api/v1/zsys/apars"
+  
+  tasks:
+    - name: Send GET request to IBM API
+      uri:
+        url: "{{ api_url }}"
+        method: GET
+        headers:
+          Authorization: "C_API_KEY {{ api_key }}"
+          InstanceId: "{{ instance_id }}"
+        return_content: yes
+      register: api_response
+    
+    - name: Display response
+      debug:
+        var: api_response.content
