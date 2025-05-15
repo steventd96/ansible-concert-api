@@ -1,0 +1,47 @@
+---
+# fetch_apar_hiper_info.yml
+# Ansible playbook to fetch HIPER information for a specific APAR ID
+
+- name: Fetch APAR HIPER information
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  
+  vars:
+    # API details
+    api_base_url: "https://65879.us-south-8.concert.saas.ibm.com/grader/api/v1/zsys/apar"
+    api_key: "{{ concert_api_key }}"
+    instance_id: "{{ concert_instance_id }}"
+    # APAR details - can be overridden via extra_vars
+    apar_id: "{{ apar_id }}"
+    
+  tasks:
+    - name: Validate APAR ID is provided
+      fail:
+        msg: "APAR ID is required. Please provide it as an extra variable: -e 'apar_id=YOUR_APAR_ID'"
+      when: apar_id == "REPLACE_WITH_APAR_ID"
+
+    - name: Fetch HIPER information for the APAR
+      uri:
+        url: "{{ api_base_url }}/{{ apar_id }}/HIPER"
+        method: GET
+        headers:
+          accept: "application/json, text/plain, */*"
+          accept-language: "en-GB"
+          instanceid: "{{ instance_id }}"
+          Authorization: "C_API_KEY {{ api_key }}"
+        validate_certs: yes
+        status_code: [200, 201, 202]
+        return_content: yes
+      register: api_response
+      failed_when: api_response.status not in [200, 201, 202]
+
+    - name: Display response
+      debug:
+        var: api_response.content | from_json
+
+    - name: Store API response to file
+      copy:
+        content: "{{ api_response.content }}"
+        dest: "./apar_{{ apar_id }}_hiper_info.json"
+      when: api_response.status in [200, 201, 202]
